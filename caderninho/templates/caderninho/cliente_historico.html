@@ -1,0 +1,195 @@
+{% extends 'caderninho/base.html' %}
+
+{% block title %}Meu Caderninho - Confeitaria Gourmet{% endblock %}
+
+{% block content %}
+<div class="max-w-4xl mx-auto py-4 sm:py-8">
+  
+  <div class="text-center mb-8">
+    <h1 class="text-3xl font-serif font-bold tracking-tight text-slate-900">Meu Caderninho</h1>
+    <p class="text-sm text-slate-500 mt-2">Acompanhe seus pedidos, fechamentos e saldo atualizado.</p>
+    <div class="w-12 h-0.5 bg-orange-500 mx-auto mt-3"></div>
+  </div>
+
+  <!-- Card de Saldo Devedor Consolidado -->
+  <div class="bg-white border-t-4 border-t-orange-600 border border-slate-200 rounded-3xl p-6 sm:p-8 text-center shadow-sm mb-8">
+    <span class="text-xs font-semibold text-slate-400 uppercase tracking-wider mb-1 block">Saldo Devedor Acumulado</span>
+    <h2 class="text-4xl sm:text-5xl font-extrabold tracking-tight {% if saldo_total_devedor > 0 %}text-rose-600{% else %}text-emerald-600{% endif %} mb-4">
+      R$ {{ saldo_total_devedor }}
+    </h2>
+    
+    <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 border-t border-slate-100 pt-4 text-left max-w-lg mx-auto text-sm">
+      <div class="bg-slate-50 p-4 rounded-2xl border border-slate-100">
+        <span class="text-xs font-medium text-slate-500 block">Pedidos do Mês Atual (Aberto)</span>
+        <strong class="text-base font-bold text-slate-900 mt-0.5 block">R$ {{ saldo_aberto_atual }}</strong>
+      </div>
+      <div class="bg-slate-50 p-4 rounded-2xl border border-slate-100">
+        <span class="text-xs font-medium text-slate-500 block">Faturas Anteriores Pendentes</span>
+        <strong class="text-base font-bold text-slate-900 mt-0.5 block">R$ {{ saldo_faturas_pendentes }}</strong>
+      </div>
+    </div>
+    
+    {% if saldo_total_devedor > 0 %}
+      <div class="inline-flex items-center gap-1.5 bg-amber-50 border border-amber-200 text-amber-800 text-xs font-medium px-4 py-2 rounded-full mt-6 mb-4">
+        <i class="bi bi-info-circle-fill"></i> A cobrança e fechamento são mensais via WhatsApp.
+      </div>
+
+      <!-- Chave PIX e Copia e Cola -->
+      <div class="bg-slate-50 border border-slate-200 rounded-2xl p-5 text-left max-w-md mx-auto">
+        <span class="block font-bold text-xs text-slate-700 uppercase tracking-wider text-center mb-3">Realizar Pagamento via PIX</span>
+        
+        <div class="text-xs space-y-1.5 mb-4 text-slate-600 border-b border-slate-200/60 pb-3">
+          <p class="flex justify-between">
+            <span class="font-medium text-slate-400">Chave PIX ({{ config.get_tipo_chave_pix_display }}):</span>
+            <code class="font-mono font-bold text-slate-800 text-sm">{{ config.chave_pix }}</code>
+          </p>
+          <p class="flex justify-between">
+            <span class="font-medium text-slate-400">Titular:</span>
+            <span class="font-semibold text-slate-800">{{ config.nome_titular }}</span>
+          </p>
+        </div>
+        
+        {% if pix_copia_cola %}
+          <div>
+            <label for="pix-copia-cola-text" class="block text-[10px] font-semibold text-slate-400 uppercase tracking-wider mb-1">Código PIX Copia e Cola</label>
+            <div class="flex gap-2">
+              <input type="text" id="pix-copia-cola-text" value="{{ pix_copia_cola }}" readonly class="flex-grow bg-white border border-slate-200 rounded-xl px-3 py-2 text-xs font-mono focus:outline-none">
+              <button onclick="copyPixCode()" class="bg-orange-600 hover:bg-orange-700 text-white font-semibold text-xs px-4 py-2 rounded-xl shadow-sm transition flex items-center gap-1">
+                <i class="bi bi-clipboard" id="copy-icon"></i> Copiar
+              </button>
+            </div>
+          </div>
+        {% endif %}
+      </div>
+    {% endif %}
+  </div>
+
+  <!-- Listagem de Pedidos e Faturas -->
+  <div class="grid grid-cols-1 lg:grid-cols-12 gap-6">
+    
+    <!-- Coluna Pedidos Recentes -->
+    <div class="lg:col-span-7 bg-white border border-slate-200 rounded-3xl p-6 shadow-sm">
+      <h3 class="font-serif font-bold text-lg text-slate-900 flex items-center gap-2 mb-4">
+        <i class="bi bi-receipt text-orange-500"></i> Pedidos Recentes
+      </h3>
+      <hr class="border-slate-100 mb-4">
+      
+      <div class="overflow-x-auto">
+        <table class="w-full text-left text-xs border-collapse">
+          <thead>
+            <tr class="border-b border-slate-200 text-slate-400 uppercase font-semibold">
+              <th class="py-2.5">Pedido</th>
+              <th class="py-2.5">Data</th>
+              <th class="py-2.5">Status Preparo</th>
+              <th class="py-2.5">Status Pago</th>
+              <th class="py-2.5 text-right">Total</th>
+            </tr>
+          </thead>
+          <tbody class="divide-y divide-slate-100">
+            {% for ped in pedidos %}
+              <tr class="hover:bg-slate-50/50">
+                <td class="py-3 font-bold text-slate-800">#{{ ped.id }}</td>
+                <td class="py-3 text-slate-500">{{ ped.data_criacao|date:"d/m H:i" }}</td>
+                <td class="py-3">
+                  {% if ped.status == 'PENDENTE' %}
+                    <span class="inline-flex items-center text-[10px] font-semibold px-2 py-0.5 rounded-full border bg-amber-50 border-amber-200 text-amber-700">Pendente</span>
+                  {% elif ped.status == 'PREPARANDO' %}
+                    <span class="inline-flex items-center text-[10px] font-semibold px-2 py-0.5 rounded-full border bg-blue-50 border-blue-200 text-blue-700">Preparo</span>
+                  {% elif ped.status == 'ENTREGUE' %}
+                    <span class="inline-flex items-center text-[10px] font-semibold px-2 py-0.5 rounded-full border bg-emerald-50 border-emerald-200 text-emerald-700">Pronto</span>
+                  {% else %}
+                    <span class="inline-flex items-center text-[10px] font-semibold px-2 py-0.5 rounded-full border bg-slate-50 border-slate-200 text-slate-400">Cancelado</span>
+                  {% endif %}
+                </td>
+                <td class="py-3">
+                  {% if ped.status_financeiro == 'PAGO' %}
+                    <span class="status-pago"><i class="bi bi-check-circle"></i> Pago</span>
+                  {% else %}
+                    <span class="status-pendente">A Pagar</span>
+                  {% endif %}
+                </td>
+                <td class="py-3 text-right font-bold text-slate-900">R$ {{ ped.total_pedido }}</td>
+              </tr>
+            {% empty %}
+              <tr>
+                <td colspan="5" class="py-6 text-center text-slate-400 font-medium">Nenhum pedido realizado ainda.</td>
+              </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- Coluna Faturas Consolidadas -->
+    <div class="lg:col-span-5 bg-white border border-slate-200 rounded-3xl p-6 shadow-sm">
+      <h3 class="font-serif font-bold text-lg text-slate-900 flex items-center gap-2 mb-4">
+        <i class="bi bi-calendar2-check text-orange-500"></i> Faturas Mensais
+      </h3>
+      <hr class="border-slate-100 mb-4">
+      
+      <div class="overflow-x-auto">
+        <table class="w-full text-left text-xs border-collapse">
+          <thead>
+            <tr class="border-b border-slate-200 text-slate-400 uppercase font-semibold">
+              <th class="py-2.5">Mês/Ano</th>
+              <th class="py-2.5">Status</th>
+              <th class="py-2.5 text-right">Total</th>
+            </tr>
+          </thead>
+          <tbody class="divide-y divide-slate-100">
+            {% for f in fechamentos %}
+              <tr class="hover:bg-slate-50/50">
+                <td class="py-3 font-bold text-slate-800">{{ f.mes|stringformat:"02d" }}/{{ f.ano }}</td>
+                <td class="py-3">
+                  {% if f.pago %}
+                    <span class="status-pago">Pago</span>
+                  {% else %}
+                    <span class="status-pendente">Em Aberto</span>
+                  {% endif %}
+                </td>
+                <td class="py-3 text-right font-bold text-slate-950">R$ {{ f.total_devedor }}</td>
+              </tr>
+            {% empty %}
+              <tr>
+                <td colspan="3" class="py-6 text-center text-slate-400 font-medium">Nenhuma fatura consolidada ainda.</td>
+              </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+  </div>
+
+  <div class="text-center mt-8">
+    <a href="{% url 'cardapio' %}" class="inline-flex items-center gap-2 bg-orange-600 hover:bg-orange-700 text-white font-semibold py-3 px-8 rounded-xl shadow-sm transition text-sm">
+      Ir para o Cardápio de Hoje
+      <i class="bi bi-arrow-right-short text-lg"></i>
+    </a>
+  </div>
+
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+  function copyPixCode() {
+    const input = document.getElementById('pix-copia-cola-text');
+    input.select();
+    input.setSelectionRange(0, 99999);
+    
+    navigator.clipboard.writeText(input.value).then(() => {
+      const icon = document.getElementById('copy-icon');
+      icon.className = "bi bi-clipboard-check";
+      
+      alert('Código PIX Copia e Cola copiado! Agora é só colar no aplicativo do seu banco.');
+      
+      setTimeout(() => {
+        icon.className = "bi bi-clipboard";
+      }, 3000);
+    }).catch(err => {
+      console.error('Erro ao copiar: ', err);
+    });
+  }
+</script>
+{% endblock %}

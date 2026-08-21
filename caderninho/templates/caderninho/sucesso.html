@@ -1,0 +1,73 @@
+{% extends 'caderninho/base.html' %}
+
+{% block title %}Pedido Confirmado! - Confeitaria Gourmet{% endblock %}
+
+{% block content %}
+<div class="max-w-xl mx-auto py-4 sm:py-8">
+  <div class="bg-white border border-slate-200 rounded-3xl p-6 sm:p-8 text-center shadow-sm">
+    
+    <!-- Heart Icon -->
+    <div class="w-16 h-16 bg-rose-50 text-rose-500 rounded-full flex items-center justify-center mx-auto mb-4">
+      <i class="bi bi-heart-fill text-3xl"></i>
+    </div>
+    
+    <h1 class="text-2xl font-serif font-bold tracking-tight text-slate-900">Pedido Confirmado!</h1>
+    <p class="text-sm text-slate-500 mt-2 max-w-sm mx-auto">Seu pedido foi registrado no seu caderninho e nossa cozinha artesanal já foi notificada para iniciar o preparo.</p>
+    
+    <hr class="my-6 border-slate-200">
+    
+    <!-- Resumo da Compra -->
+    <div class="text-left">
+      <h3 class="text-xs font-semibold text-slate-400 uppercase tracking-wider mb-4 flex items-center gap-1.5">
+        <i class="bi bi-journal-text text-orange-500"></i> Resumo da Compra #{{ pedido.id }}
+      </h3>
+      
+      <div class="space-y-3 mb-6">
+        {% for item in pedido.itens.all %}
+          <div class="flex items-center justify-between gap-4 py-2.5 border-b border-slate-100 text-sm">
+            <div>
+              <span class="font-bold text-slate-800">{{ item.quantidade }}x</span>
+              <span class="text-slate-700 ml-1">{{ item.produto.nome }}</span>
+              <span class="block text-[10px] text-slate-400 mt-0.5">Preço Unitário: R$ {{ item.preco_unitario }}</span>
+            </div>
+            <span class="font-semibold text-slate-800">R$ {{ item.total_item }}</span>
+          </div>
+        {% endfor %}
+        
+        {% if pedido.taxa_entrega > 0 %}
+          <div class="flex items-center justify-between gap-4 py-2 text-sm text-slate-500">
+            <span class="flex items-center gap-1"><i class="bi bi-truck"></i> Taxa de Entrega</span>
+            <span class="font-semibold">R$ {{ pedido.taxa_entrega }}</span>
+          </div>
+        {% endif %}
+        
+        <div class="flex items-center justify-between gap-4 pt-4 text-base font-bold">
+          <span class="text-slate-900">Total Registrado</span>
+          <span class="text-emerald-700">R$ {{ pedido.total_pedido }}</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Observações -->
+    {% if pedido.observacoes %}
+      <div class="text-left bg-[#FAF8F5] border-l-4 border-orange-500 p-4 rounded-xl mb-6">
+        <span class="block text-[10px] font-semibold text-slate-400 uppercase tracking-wider mb-1">Observações do Pedido</span>
+        <p class="text-xs text-slate-700">{{ pedido.observacoes }}</p>
+      </div>
+    {% endif %}
+
+    <!-- Botões de Ação -->
+    <div class="space-y-2 mt-4">
+      <a href="{% url 'cardapio' %}" class="w-full bg-orange-600 hover:bg-orange-700 text-white font-semibold py-3 px-4 rounded-xl shadow-sm transition flex items-center justify-center gap-1 text-sm">
+        Realizar Novo Pedido
+        <i class="bi bi-arrow-right-short text-lg"></i>
+      </a>
+      <a href="{% url 'cliente_historico' %}" class="w-full border border-orange-200 text-orange-600 hover:bg-orange-50/50 font-semibold py-3 px-4 rounded-xl transition flex items-center justify-center gap-1.5 text-sm">
+        <i class="bi bi-wallet2"></i>
+        Ver Meu Extrato
+      </a>
+    </div>
+
+  </div>
+</div>
+{% endblock %}

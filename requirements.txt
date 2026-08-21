@@ -1,0 +1,4 @@
+Django>=4.2,<5.1
+pillow>=10.0.0
+django-bootstrap5>=23.3
+django-ratelimit>=4.1.0

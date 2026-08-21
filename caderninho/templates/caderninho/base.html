@@ -1,0 +1,184 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="referrer" content="same-origin">
+  <meta http-equiv="X-Content-Type-Options" content="nosniff">
+  <title>{% block title %}Confeitaria Gourmet - Caderninho{% endblock %}</title>
+  
+  <!-- Tailwind CSS via CDN -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  
+  <!-- Plus Jakarta Sans & Playfair Display Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700&family=Playfair+Display:wght@600;700;800&display=swap" rel="stylesheet">
+  
+  <!-- Bootstrap Icons -->
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.5/font/bootstrap-icons.css">
+
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          fontFamily: {
+            sans: ['"Plus Jakarta Sans"', 'sans-serif'],
+            serif: ['"Playfair Display"', 'serif'],
+          },
+          colors: {
+            brand: {
+              50: '#fff7ed',
+              100: '#ffedd5',
+              600: '#ea580c',
+              700: '#c2410c',
+            }
+          }
+        }
+      }
+    }
+  </script>
+  <style>
+    /* Custom Utility Classes that Tailwind can reference */
+    .status-pago {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.25rem;
+      font-size: 0.75rem;
+      font-weight: 600;
+      padding: 0.25rem 0.625rem;
+      border-radius: 9999px;
+      border-width: 1px;
+      background-color: #f0fdf4;
+      border-color: #bbf7d0;
+      color: #166534;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+    }
+    .status-pendente {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.25rem;
+      font-size: 0.75rem;
+      font-weight: 600;
+      padding: 0.25rem 0.625rem;
+      border-radius: 9999px;
+      border-width: 1px;
+      background-color: #fff1f2;
+      border-color: #fecdd3;
+      color: #9f1239;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+    }
+    
+    /* Django Form Field Styling Overrides */
+    .form-control, input[type="text"], input[type="password"], input[type="tel"], input[type="number"], textarea, select {
+      width: 100%;
+      background-color: #F8FAFC;
+      border: 1px solid #E2E8F0;
+      border-radius: 0.75rem;
+      padding: 0.625rem 0.875rem;
+      font-size: 0.875rem;
+      color: #0F172A;
+      transition: all 0.2s;
+    }
+    .form-control:focus, input:focus, textarea:focus, select:focus {
+      outline: none;
+      border-color: #EA580C;
+      background-color: #FFFFFF;
+      box-shadow: 0 0 0 2px rgba(234, 88, 12, 0.2);
+    }
+    input[type="checkbox"] {
+      width: 1rem;
+      height: 1rem;
+      border-radius: 0.25rem;
+      border: 1px solid #E2E8F0;
+      color: #EA580C;
+      transition: all 0.2s;
+    }
+  </style>
+  {% block extra_css %}{% endblock %}
+</head>
+<body class="bg-gradient-to-tr from-[#FAF8F5] via-[#FFF8F3] to-[#FAF8F5] text-[#0F172A] min-h-screen flex flex-col justify-between antialiased font-sans">
+
+  <!-- Header Premium Nav -->
+  <header class="bg-white border-b border-slate-200 sticky top-0 z-50">
+    <div class="max-w-5xl mx-auto px-4 sm:px-6 h-16 flex items-center justify-between">
+      <a href="{% url 'identificacao_cliente' %}" class="flex items-center gap-2">
+        <span class="text-2xl">🍰</span>
+        <span class="font-serif font-bold text-lg tracking-tight text-slate-800">Confeitaria <span class="text-orange-600">Gourmet</span></span>
+      </a>
+      
+      <div class="flex items-center gap-4">
+        {% if request.session.cliente_id %}
+          <nav class="hidden md:flex items-center gap-4 text-sm font-medium">
+            <a href="{% url 'cardapio' %}" class="text-slate-600 hover:text-slate-900 transition flex items-center gap-1">
+              <i class="bi bi-journal-text"></i> Cardápio do Dia
+            </a>
+            <a href="{% url 'cliente_historico' %}" class="text-slate-600 hover:text-slate-900 transition flex items-center gap-1">
+              <i class="bi bi-wallet2"></i> Meu Caderninho
+            </a>
+          </nav>
+          
+          <div class="flex items-center gap-3">
+            <span class="text-xs text-slate-500 hidden sm:inline">
+              Olá, <strong class="text-slate-800 font-semibold">{{ request.session.cliente_name }}</strong>
+            </span>
+            <a href="{% url 'deslogar_cliente' %}" class="inline-flex items-center gap-1 text-xs font-semibold text-rose-600 hover:text-rose-700 bg-rose-50 hover:bg-rose-100 px-3 py-2 rounded-lg transition">
+              <i class="bi bi-box-arrow-right"></i> Sair
+            </a>
+          </div>
+        {% else %}
+          <a href="{% url 'admin_dashboard' %}" class="inline-flex items-center gap-1.5 text-xs font-semibold text-slate-600 hover:text-slate-900 bg-slate-100 hover:bg-slate-200 px-3.5 py-2 rounded-lg transition">
+            <svg class="w-4 h-4 text-slate-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"/></svg>
+            Painel Admin
+          </a>
+        {% endif %}
+      </div>
+    </div>
+  </header>
+
+  <!-- Mobile Nav Tab Bar (Show only if logged in) -->
+  {% if request.session.cliente_id %}
+  <div class="md:hidden bg-white border-t border-slate-200 fixed bottom-0 left-0 right-0 z-40">
+    <div class="grid grid-cols-2 h-14">
+      <a href="{% url 'cardapio' %}" class="flex flex-col items-center justify-center text-xs font-medium {% if request.resolver_match.url_name == 'cardapio' %}text-orange-600{% else %}text-slate-500 hover:text-slate-900{% endif %} transition">
+        <i class="bi bi-journal-text text-lg"></i>
+        <span>Cardápio</span>
+      </a>
+      <a href="{% url 'cliente_historico' %}" class="flex flex-col items-center justify-center text-xs font-medium {% if request.resolver_match.url_name == 'cliente_historico' %}text-orange-600{% else %}text-slate-500 hover:text-slate-900{% endif %} transition">
+        <i class="bi bi-wallet2 text-lg"></i>
+        <span>Meu Caderninho</span>
+      </a>
+    </div>
+  </div>
+  {% endif %}
+
+  <!-- Main Content Container -->
+  <main class="flex-grow max-w-5xl w-full mx-auto px-4 py-6 sm:py-8 {% if request.session.cliente_id %}pb-24 md:pb-8{% endif %}">
+    {% if messages %}
+      <div class="max-w-xl mx-auto mb-6 space-y-3">
+        {% for message in messages %}
+          <div class="flex items-start gap-3 p-4 rounded-xl border {% if message.tags == 'success' %}bg-emerald-50 border-emerald-200 text-emerald-800{% elif message.tags == 'error' %}bg-rose-50 border-rose-200 text-rose-800{% else %}bg-amber-50 border-amber-200 text-amber-800{% endif %} transition" role="alert">
+            <span class="text-lg">
+              {% if message.tags == 'success' %}✨{% elif message.tags == 'error' %}⚠️{% else %}ℹ️{% endif %}
+            </span>
+            <div class="flex-grow text-sm font-medium">
+              {{ message }}
+            </div>
+          </div>
+        {% endfor %}
+      </div>
+    {% endif %}
+
+    {% block content %}{% endblock %}
+  </main>
+
+  <!-- Footer Premium -->
+  <footer class="text-center py-6 text-xs text-slate-400 border-t border-slate-200/60 bg-white">
+    <p>© 2026 Confeitaria Gourmet • Feito com carinho e qualidade premium</p>
+  </footer>
+
+  {% block extra_js %}{% endblock %}
+</body>
+</html>

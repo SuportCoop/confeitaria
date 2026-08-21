@@ -1,0 +1,214 @@
+{% extends 'caderninho/admin_base.html' %}
+
+{% block admin_content %}
+<div class="bg-white border border-slate-200 rounded-3xl p-6 sm:p-8 shadow-sm">
+  
+  <!-- Header -->
+  <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 border-b border-slate-100 pb-5 mb-6">
+    <div>
+      <h2 class="text-xl font-serif font-bold text-slate-800 flex items-center gap-1.5 mt-0.5">
+        <i class="bi bi-people text-orange-500"></i> Carteira de Clientes
+      </h2>
+      <p class="text-xs text-slate-500 mt-1">Monitore as contas correntes (caderninhos) e saldos totais.</p>
+    </div>
+    <a href="{% url 'admin_cliente_criar' %}" class="inline-flex items-center gap-1.5 text-xs font-semibold text-white bg-orange-600 hover:bg-orange-700 px-4 py-2.5 rounded-xl shadow-sm transition">
+      <i class="bi bi-person-plus"></i> Novo Cliente
+    </a>
+  </div>
+
+  <!-- Tabela de Clientes -->
+  <div class="overflow-x-auto">
+    <table class="w-full text-left text-xs border-collapse">
+      <thead>
+        <tr class="border-b border-slate-200 text-slate-400 uppercase font-semibold">
+          <th class="py-3 px-2">Nome</th>
+          <th class="py-3 px-2 hidden md:table-cell">WhatsApp</th>
+          <th class="py-3 px-2 text-center hidden md:table-cell">Total Pedidos</th>
+          <th class="py-3 px-2 hidden md:table-cell">Saldo do Mês (Aberto)</th>
+          <th class="py-3 px-2 hidden md:table-cell">Faturas Anteriores</th>
+          <th class="py-3 px-2">Saldo Total Devedor</th>
+          <th class="py-3 px-2 text-right">Ações</th>
+        </tr>
+      </thead>
+      <tbody class="divide-y divide-slate-100">
+        {% for item in clientes_list %}
+          <tr class="hover:bg-slate-50/50">
+            <!-- Nome -->
+            <td class="py-4 px-2">
+              <strong class="text-slate-800 text-sm block">{{ item.obj.nome }}</strong>
+              <div class="flex flex-wrap items-center gap-1.5 mt-1 text-[10px] text-slate-500 md:hidden">
+                <span class="font-semibold text-emerald-600"><i class="bi bi-whatsapp"></i> {{ item.obj.whatsapp }}</span>
+                {% if not item.obj.ativo %}
+                  <span class="inline-flex items-center font-bold bg-slate-100 text-slate-500 px-1.5 py-0.5 rounded uppercase">Inativo</span>
+                {% endif %}
+              </div>
+            </td>
+            
+            <!-- WhatsApp (Desktop) -->
+            <td class="py-4 px-2 hidden md:table-cell">
+              <a href="https://wa.me/{{ item.obj.whatsapp|cut:'+'|cut:' '|cut:'-' }}" target="_blank" class="inline-flex items-center gap-1 text-emerald-600 hover:underline font-semibold">
+                <i class="bi bi-whatsapp"></i> {{ item.obj.whatsapp }}
+              </a>
+            </td>
+            
+            <!-- Total Pedidos (Desktop) -->
+            <td class="py-4 px-2 text-center text-slate-500 font-medium hidden md:table-cell">{{ item.pedidos_contagem }}</td>
+            
+            <!-- Saldo Aberto (Desktop) -->
+            <td class="py-4 px-2 font-semibold text-slate-700 hidden md:table-cell">R$ {{ item.saldo_aberto }}</td>
+            
+            <!-- Faturas Anteriores (Desktop) -->
+            <td class="py-4 px-2 font-semibold text-slate-700 hidden md:table-cell">R$ {{ item.saldo_faturas }}</td>
+            
+            <!-- Saldo Total Devedor -->
+            <td class="py-4 px-2">
+              <span class="font-bold {% if item.saldo_total > 0 %}text-rose-600{% else %}text-emerald-600{% endif %}">
+                R$ {{ item.saldo_total }}
+              </span>
+            </td>
+            
+            <!-- Ações -->
+            <td class="py-4 px-2 text-right">
+              <!-- Desktop Actions -->
+              <div class="hidden md:flex justify-end gap-1">
+                <a href="{% url 'admin_cliente_detalhes' item.obj.id %}" class="inline-flex items-center gap-1 text-xs font-semibold text-orange-600 hover:text-orange-700 bg-orange-50 hover:bg-orange-100 px-3.5 py-2 rounded-xl transition">
+                  <i class="bi bi-journal-text"></i> Conta Corrente
+                </a>
+              </div>
+              
+              <!-- Mobile Actions Button -->
+              <button type="button" 
+                      onclick="openClientModal({{ item.obj.id }}, '{{ item.obj.nome|escapejs }}', '{{ item.obj.whatsapp }}', '{{ item.saldo_total }}', '{{ item.saldo_aberto }}', '{{ item.saldo_faturas }}', 'https://wa.me/{{ item.obj.whatsapp|cut:\'+\'|cut:\' \'|cut:\'-\' }}')" 
+                      class="md:hidden inline-flex items-center justify-center w-8 h-8 rounded-full bg-slate-100 hover:bg-slate-200 text-slate-600 transition">
+                <i class="bi bi-three-dots-vertical"></i>
+              </button>
+            </td>
+          </tr>
+        {% empty %}
+          <tr>
+            <td colspan="7" class="py-8 text-center text-slate-400 font-medium">Nenhum cliente cadastrado no sistema.</td>
+          </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+
+</div>
+
+<!-- Bottom Drawer / Modal de Ações no Mobile -->
+<div id="actionModal" class="fixed inset-0 bg-slate-900/40 backdrop-blur-sm z-50 flex items-end sm:items-center justify-center hidden">
+  <div class="bg-white rounded-t-3xl sm:rounded-3xl border border-slate-200 p-6 shadow-xl max-w-sm w-full relative">
+    <button type="button" onclick="closeActionModal()" class="absolute top-4 right-4 text-slate-400 hover:text-slate-600 text-lg font-bold">&times;</button>
+    <h3 id="modalTitle" class="font-serif font-bold text-lg text-slate-950 pr-8 mb-4">Nome do Cliente</h3>
+    
+    <div id="modalActions" class="space-y-2">
+      <!-- Injetado dinamicamente -->
+    </div>
+  </div>
+</div>
+
+<!-- Modal Redefinir Senha do Cliente Rápido -->
+<div id="resetPasswordModal" class="fixed inset-0 bg-slate-900/40 backdrop-blur-sm z-50 flex items-center justify-center hidden">
+  <div class="bg-white border border-slate-200 rounded-3xl p-6 shadow-xl max-w-sm w-full mx-4 relative">
+    <button onclick="toggleModal('resetPasswordModal', false)" class="absolute top-4 right-4 text-slate-400 hover:text-slate-600 text-lg font-bold">&times;</button>
+    <h3 class="font-serif font-bold text-lg text-slate-900 mb-2 flex items-center gap-2">
+      <i class="bi bi-key-fill text-orange-500"></i> Redefinir Senha
+    </h3>
+    <p class="text-xs text-slate-500 mb-4">Digite a nova senha de acesso para o cliente <strong id="resetTargetName">Cliente</strong>.</p>
+    
+    <form id="resetPasswordForm" method="post" action="" class="space-y-4">
+      {% csrf_token %}
+      <div>
+        <label for="nova_senha" class="block text-xs font-semibold text-slate-700 mb-1.5">Nova Senha</label>
+        <input type="password" name="nova_senha" id="nova_senha" placeholder="Digite a nova senha de acesso..." class="w-full bg-slate-50 border border-slate-200 rounded-xl px-3.5 py-2.5 text-sm text-slate-800 focus:outline-none focus:ring-2 focus:ring-orange-500 focus:bg-white transition" required>
+      </div>
+      <div class="flex justify-end gap-2 pt-2">
+        <button type="button" onclick="toggleModal('resetPasswordModal', false)" class="text-xs font-semibold text-slate-600 hover:text-slate-900 bg-slate-100 hover:bg-slate-200 px-4 py-2 rounded-xl transition">
+          Cancelar
+        </button>
+        <button type="submit" class="text-xs font-semibold text-white bg-orange-600 hover:bg-orange-700 px-4 py-2 rounded-xl shadow-sm transition">
+          Alterar Senha
+        </button>
+      </div>
+    </form>
+  </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+  function openClientModal(id, nome, whatsapp, saldoTotal, saldoAberto, saldoFaturas, whatsappLink) {
+    document.getElementById('modalTitle').innerText = nome;
+    const actionsDiv = document.getElementById('modalActions');
+    
+    const extratoUrl = `/painel/clientes/${id}/`;
+    const editarUrl = `/painel/clientes/editar/${id}/`;
+    
+    let billingAction = '';
+    if (parseFloat(saldoTotal) > 0) {
+      billingAction = `
+        <a href="${whatsappLink}" target="_blank" class="w-full flex items-center justify-center gap-2 font-bold text-xs py-3 px-4 rounded-xl bg-[#25D366] hover:bg-[#1ebd59] text-white transition">
+          <i class="bi bi-whatsapp"></i> Cobrar via WhatsApp
+        </a>
+      `;
+    }
+    
+    actionsDiv.innerHTML = `
+      <div class="text-xs text-slate-500 mb-4 pb-3 border-b border-slate-100 space-y-1">
+        <p><strong>WhatsApp:</strong> ${whatsapp}</p>
+        <p><strong>Saldo do Mês (Aberto):</strong> R$ ${saldoAberto}</p>
+        <p><strong>Faturas Anteriores:</strong> R$ ${saldoFaturas}</p>
+        <p><strong>Saldo Devedor Total:</strong> <span class="font-bold ${parseFloat(saldoTotal) > 0 ? 'text-rose-600' : 'text-emerald-600'}">R$ ${saldoTotal}</span></p>
+      </div>
+      
+      <a href="${extratoUrl}" class="w-full flex items-center justify-center gap-2 font-semibold text-xs py-3 px-4 rounded-xl bg-orange-600 hover:bg-orange-700 text-white transition">
+        <i class="bi bi-journal-text"></i> Ver Conta Corrente
+      </a>
+      
+      ${billingAction}
+      
+      <a href="${editarUrl}" class="w-full flex items-center justify-center gap-2 font-semibold text-xs py-3 px-4 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 transition">
+        <i class="bi bi-pencil"></i> Editar Cadastro
+      </a>
+
+      <button onclick="triggerResetPassword('${id}', '${nome}')" class="w-full flex items-center justify-center gap-2 font-semibold text-xs py-3 px-4 rounded-xl border border-slate-200 hover:bg-slate-50 text-slate-700 transition">
+        <i class="bi bi-key-fill text-orange-500"></i> Redefinir Senha
+      </button>
+    `;
+    
+    document.getElementById('actionModal').classList.remove('hidden');
+  }
+
+  function closeActionModal() {
+    document.getElementById('actionModal').classList.add('hidden');
+  }
+
+  function triggerResetPassword(id, nome) {
+    closeActionModal();
+    document.getElementById('resetTargetName').innerText = nome;
+    document.getElementById('resetPasswordForm').action = `/painel/clientes/${id}/reset-senha/`;
+    toggleModal('resetPasswordModal', true);
+  }
+
+  function toggleModal(modalId, show) {
+    const modal = document.getElementById(modalId);
+    if (show) {
+      modal.classList.remove('hidden');
+    } else {
+      modal.classList.add('hidden');
+    }
+  }
+
+  // Fecha modal ao clicar fora dele
+  window.addEventListener('click', function(e) {
+    const actionModal = document.getElementById('actionModal');
+    const resetModal = document.getElementById('resetPasswordModal');
+    if (e.target === actionModal) {
+      closeActionModal();
+    }
+    if (e.target === resetModal) {
+      toggleModal('resetPasswordModal', false);
+    }
+  });
+</script>
+{% endblock %}

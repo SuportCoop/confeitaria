@@ -1,0 +1,51 @@
+{% extends 'caderninho/base.html' %}
+
+{% block title %}Painel Administrativo - Confeitaria Gourmet{% endblock %}
+
+{% block content %}
+<div class="grid grid-cols-1 md:grid-cols-12 gap-6">
+  
+  <!-- Sidebar / Nav do Admin -->
+  <aside class="col-span-1 md:col-span-3">
+    <div class="bg-white border border-slate-200 rounded-3xl p-4 sm:p-5 shadow-sm">
+      <div class="text-center py-2 mb-4 border-b border-slate-100">
+        <span class="text-[10px] font-semibold text-slate-400 uppercase tracking-wider block">Área Administrativa</span>
+        <strong class="font-serif font-bold text-slate-800 text-lg mt-0.5 block">Controle Interno</strong>
+      </div>
+      
+      <!-- Nav List -->
+      <nav class="flex md:flex-col overflow-x-auto md:overflow-x-visible pb-2 md:pb-0 gap-1 text-xs font-semibold whitespace-nowrap scrollbar-none">
+        <a href="{% url 'admin_dashboard' %}" class="flex items-center gap-2 py-2.5 px-4 rounded-xl transition {% if request.resolver_match.url_name == 'admin_dashboard' %}bg-orange-600 text-white shadow-sm{% else %}text-slate-600 hover:text-slate-900 hover:bg-slate-50{% endif %}">
+          <i class="bi bi-speedometer2 text-base"></i>
+          <span>Painel Geral</span>
+        </a>
+        <a href="{% url 'admin_pedidos' %}" class="flex items-center gap-2 py-2.5 px-4 rounded-xl transition {% if request.resolver_match.url_name == 'admin_pedidos' or request.resolver_match.url_name == 'admin_pedido_criar' %}bg-orange-600 text-white shadow-sm{% else %}text-slate-600 hover:text-slate-900 hover:bg-slate-50{% endif %}">
+          <i class="bi bi-cart3 text-base"></i>
+          <span>Vendas & Pedidos</span>
+        </a>
+        <a href="{% url 'admin_produtos' %}" class="flex items-center gap-2 py-2.5 px-4 rounded-xl transition {% if request.resolver_match.url_name == 'admin_produtos' or request.resolver_match.url_name == 'admin_produto_criar' or request.resolver_match.url_name == 'admin_produto_editar' %}bg-orange-600 text-white shadow-sm{% else %}text-slate-600 hover:text-slate-900 hover:bg-slate-50{% endif %}">
+          <i class="bi bi-egg-fried text-base"></i>
+          <span>Cardápio & Produtos</span>
+        </a>
+        <a href="{% url 'admin_clientes' %}" class="flex items-center gap-2 py-2.5 px-4 rounded-xl transition {% if 'cliente' in request.resolver_match.url_name and request.resolver_match.url_name != 'admin_dashboard' and request.resolver_match.url_name != 'identificacao_cliente' and request.resolver_match.url_name != 'cliente_historico' %}bg-orange-600 text-white shadow-sm{% else %}text-slate-600 hover:text-slate-900 hover:bg-slate-50{% endif %}">
+          <i class="bi bi-people text-base"></i>
+          <span>Clientes & Fichas</span>
+        </a>
+      </nav>
+
+      <hr class="my-4 border-slate-100 hidden md:block">
+      
+      <a href="{% url 'admin:index' %}" class="hidden md:flex items-center justify-center gap-2 border border-slate-200 text-slate-600 hover:text-slate-900 hover:bg-slate-50 font-semibold text-xs py-2.5 px-4 rounded-xl transition w-full">
+        <i class="bi bi-shield-lock-fill text-orange-500"></i>
+        <span>Painel Avançado Django</span>
+      </a>
+    </div>
+  </aside>
+
+  <!-- Conteúdo Específico do Admin -->
+  <section class="col-span-1 md:col-span-9">
+    {% block admin_content %}{% endblock %}
+  </section>
+  
+</div>
+{% endblock %}

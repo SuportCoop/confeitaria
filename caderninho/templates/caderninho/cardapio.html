@@ -1,0 +1,155 @@
+{% extends 'caderninho/base.html' %}
+
+{% block title %}Cardápio do Dia - Confeitaria Gourmet{% endblock %}
+
+{% block content %}
+<div class="max-w-2xl mx-auto pb-16">
+  
+  <!-- Ficha do Cliente -->
+  <div class="bg-white border border-slate-200 rounded-2xl p-6 mb-6 shadow-sm">
+    <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+      <div>
+        <span class="text-xs font-semibold text-slate-400 uppercase tracking-wider">Cliente Ativo</span>
+        <h2 class="text-xl font-serif font-bold text-slate-900 flex items-center gap-1.5 mt-0.5">
+          <i class="bi bi-patch-check-fill text-orange-500"></i> {{ cliente.nome }}
+        </h2>
+        {% if cliente.endereco %}
+          <p class="text-xs text-slate-500 mt-1 flex items-center gap-1">
+            <i class="bi bi-geo-alt-fill text-slate-400"></i> {{ cliente.endereco }}
+          </p>
+        {% endif %}
+      </div>
+      <div class="flex gap-2">
+        <a href="{% url 'cliente_historico' %}" class="inline-flex items-center gap-1.5 text-xs font-semibold text-orange-600 hover:text-orange-700 bg-orange-50 hover:bg-orange-100 px-3.5 py-2.5 rounded-xl transition">
+          <i class="bi bi-clock-history"></i> Ver Extrato
+        </a>
+        <a href="{% url 'deslogar_cliente' %}" class="inline-flex items-center gap-1.5 text-xs font-semibold text-slate-600 hover:text-slate-900 bg-slate-100 hover:bg-slate-200 px-3.5 py-2.5 rounded-xl transition">
+          Sair
+        </a>
+      </div>
+    </div>
+  </div>
+
+  <div class="text-center mb-6">
+    <h3 class="text-sm font-semibold text-slate-400 uppercase tracking-wider">Vitrine de Hoje</h3>
+    <div class="w-10 h-0.5 bg-orange-500 mx-auto mt-2"></div>
+  </div>
+
+  <form method="post" action="{% url 'cardapio' %}" id="order-form" class="space-y-4">
+    {% csrf_token %}
+
+    <!-- Vitrine de Produtos -->
+    <div class="space-y-3">
+      {% for produto in produtos %}
+        <div class="bg-white border border-slate-200 rounded-2xl p-4 flex items-center justify-between gap-4 shadow-sm hover:shadow transition product-row"
+             data-id="{{ produto.id }}"
+             data-price="{{ produto.preco }}">
+          
+          <div class="flex items-center gap-4">
+            <!-- Imagem do Produto -->
+            {% if produto.imagem %}
+              <img src="{{ produto.imagem.url }}" alt="{{ produto.nome }}" class="w-16 h-16 sm:w-20 sm:h-20 object-cover rounded-xl border border-slate-100">
+            {% else %}
+              <div class="w-16 h-16 sm:w-20 sm:h-20 bg-slate-50 flex items-center justify-center rounded-xl border border-slate-100 text-slate-300">
+                <i class="bi bi-cup-straw text-2xl sm:text-3xl text-orange-300"></i>
+              </div>
+            {% endif %}
+            
+            <!-- Detalhes do Produto -->
+            <div>
+              <span class="inline-block bg-orange-50 text-orange-700 text-[10px] font-semibold px-2 py-0.5 rounded mb-1 uppercase">{{ produto.get_categoria_display }}</span>
+              <h4 class="font-bold text-sm sm:text-base text-slate-950">{{ produto.nome }}</h4>
+              <p class="text-xs text-slate-500 mt-0.5 line-clamp-2 max-w-sm">{{ produto.descricao|default:"Sem descrição adicional." }}</p>
+              <div class="flex items-center gap-3 mt-1.5">
+                <span class="font-bold text-sm text-orange-600">R$ {{ produto.preco }}</span>
+                {% if produto.limite_diario > 0 %}
+                  <span class="text-[10px] font-medium text-amber-600 bg-amber-50 px-1.5 py-0.5 rounded flex items-center gap-1">
+                    <i class="bi bi-clock"></i> Limite Ativo
+                  </span>
+                {% endif %}
+              </div>
+            </div>
+          </div>
+
+          <!-- Controle de Quantidade -->
+          <div class="flex items-center gap-1 bg-slate-50 border border-slate-200/80 rounded-full p-1 self-center">
+            <button type="button" onclick="changeQty({{ produto.id }}, -1)" class="w-8 h-8 flex items-center justify-center font-bold text-lg text-slate-600 hover:bg-slate-200/50 rounded-full transition">-</button>
+            <input type="number" 
+                   name="quantidade_{{ produto.id }}" 
+                   id="qty_{{ produto.id }}" 
+                   value="0" 
+                   min="0" 
+                   readonly 
+                   class="w-10 text-center bg-transparent border-0 font-bold text-sm text-slate-800 focus:ring-0 focus:outline-none">
+            <button type="button" onclick="changeQty({{ produto.id }}, 1)" class="w-8 h-8 flex items-center justify-center font-bold text-lg text-slate-600 hover:bg-slate-200/50 rounded-full transition">+</button>
+          </div>
+
+        </div>
+      {% empty %}
+        <div class="bg-white border border-slate-200 rounded-2xl p-8 text-center shadow-sm">
+          <i class="bi bi-info-circle text-4xl text-slate-300 block mb-3"></i>
+          <p class="text-sm font-medium text-slate-500">A vitrine de hoje está vazia ou já encerrou. Por favor, volte mais tarde!</p>
+        </div>
+      {% endfor %}
+    </div>
+
+    {% if produtos %}
+      <!-- Campo Observações -->
+      <div class="bg-white border border-slate-200 rounded-2xl p-5 shadow-sm">
+        <label for="observacoes" class="block text-xs font-semibold text-slate-700 mb-2">Observações do Pedido</label>
+        <textarea name="observacoes" id="observacoes" rows="2" placeholder="Ex: Sem cebola, embalar para presente, com vela de aniversário..." class="w-full bg-slate-50 border border-slate-200 rounded-xl px-3.5 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-orange-500 focus:bg-white transition"></textarea>
+      </div>
+
+      <!-- Barra de Resumo e Envio (Flutuante inferior) -->
+      <div class="fixed bottom-0 left-0 right-0 bg-white border-t border-slate-200 shadow-[0_-8px_30px_rgba(0,0,0,0.04)] py-4 z-40">
+        <div class="max-w-2xl mx-auto px-4 flex items-center justify-between gap-4">
+          <div>
+            <span class="text-slate-400 text-[10px] uppercase font-semibold">Total do Pedido</span>
+            <div class="text-lg font-bold text-slate-900 mt-0.5">R$ <span id="cart-total">0.00</span></div>
+          </div>
+          <button type="submit" id="btn-submit-order" disabled class="bg-orange-600 hover:bg-orange-700 disabled:bg-slate-200 disabled:text-slate-400 disabled:cursor-not-allowed text-white font-semibold py-3 px-6 rounded-xl transition flex items-center gap-2 text-sm shadow-sm">
+            Confirmar Pedido
+            <i class="bi bi-cart-check text-base"></i>
+          </button>
+        </div>
+      </div>
+    {% endif %}
+  </form>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+  function changeQty(productId, amount) {
+    const input = document.getElementById(`qty_${productId}`);
+    let currentVal = parseInt(input.value) || 0;
+    currentVal += amount;
+    if (currentVal < 0) currentVal = 0;
+    input.value = currentVal;
+    calculateTotal();
+  }
+
+  function calculateTotal() {
+    let subtotal = 0.00;
+    const rows = document.querySelectorAll('.product-row');
+    
+    rows.forEach(row => {
+      const id = row.getAttribute('data-id');
+      const price = parseFloat(row.getAttribute('data-price')) || 0;
+      const qty = parseInt(document.getElementById(`qty_${id}`).value) || 0;
+      subtotal += price * qty;
+    });
+
+    const totalSpan = document.getElementById('cart-total');
+    const btnSubmit = document.getElementById('btn-submit-order');
+    
+    totalSpan.innerText = subtotal.toFixed(2);
+
+    if (subtotal > 0) {
+      btnSubmit.removeAttribute('disabled');
+    } else {
+      btnSubmit.setAttribute('disabled', 'disabled');
+    }
+  }
+</script>
+{% endblock %}
